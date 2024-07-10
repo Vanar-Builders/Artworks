@@ -33,7 +33,7 @@ contract MarketPlace is ERC721URIStorage {
 
     // Mapping of addresses to artist details
     mapping(address => Artist) public artists;
-    // Mapping of song IDs to artworks details
+    // Mapping of artworks IDs to artworks details
     mapping(uint256 => Artwork) public artworks;
     // Mapping of addresses and collection names to playlists
     mapping(address => mapping(string => Collection)) public collection;
@@ -53,7 +53,7 @@ contract MarketPlace is ERC721URIStorage {
         emit ArtistRegistered(msg.sender, _name);
     }
 
-    // Function to add a song with title, picture URI, and NFT price
+    // Function to add a artwork with title, picture URI, and NFT price
     function addArtwork(string memory _title, string memory _pictureURI, uint256 _nftPrice) external {
         require(bytes(artists[msg.sender].name).length > 0, "Artist not registered");
         _tokenIds.increment();
