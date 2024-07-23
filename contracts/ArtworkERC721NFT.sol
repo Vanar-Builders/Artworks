@@ -18,10 +18,6 @@ contract ArtworkERC721NFT is ERC721URIStorage, Ownable {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
 
-        // // Calculate and accumulate royalty
-        // uint256 royaltyAmount = msg.value.mul(ROYALTY_PERCENTAGE).div(100);
-        // royaltyBalance = royaltyBalance.add(royaltyAmount);
-
         _safeMint(msg.sender, tokenId);
         _setTokenURI(tokenId, _tokenURI);
         return tokenId;

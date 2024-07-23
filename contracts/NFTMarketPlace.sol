@@ -2,6 +2,7 @@
 pragma solidity ^0.8.4;
 
 import "./ArtworkERC721NFT.sol";
+import "./ArtworkERC1155NFT.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -30,5 +31,22 @@ contract NftMarketplace is ReentrancyGuard {
         require(collection.collectionAddress != address(0), "Collection does not exist");
 
         ArtworkERC721NFT(collection.collectionAddress).mintNFT(tokenURI);
+    }
+
+    function createERC1155Collection(string memory name, string memory symbol, string memory uri) public {
+        require(collections[name].collectionAddress == address(0), "Collection already exists");
+
+        ERC1155Collection newCollection = new ERC1155Collection(name, symbol, uri);
+        collections[name] = Collection(address(newCollection), name, true);
+
+        emit CollectionCreated(name, address(newCollection), true);
+    }
+
+    function mintInERC1155Collection(string memory name, address recipient, uint256 amount, bytes memory data) public {
+        Collection memory collection = collections[name];
+        require(collection.collectionAddress != address(0), "Collection does not exist");
+        require(collection.isERC1155, "Not an ERC1155 collection");
+
+        ERC1155Collection(collection.collectionAddress).mintNFT(recipient, amount, data);
     }
 }

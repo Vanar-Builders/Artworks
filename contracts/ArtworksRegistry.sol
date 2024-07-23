@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import "./ArtworkERC721NFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TokenRegistry is Ownable {
+contract ArtworksRegistry is Ownable {
         // Declares a private counter for tracking token IDs.
     Counters.Counter private _tokenIds;
 
