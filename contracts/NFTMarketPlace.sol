@@ -36,7 +36,7 @@ contract NftMarketplace is ReentrancyGuard {
     function createERC1155Collection(string memory name, string memory symbol, string memory uri) public {
         require(collections[name].collectionAddress == address(0), "Collection already exists");
 
-        ERC1155Collection newCollection = new ERC1155Collection(name, symbol, uri);
+        ArtworkERC1155NFT newCollection = new ArtworkERC1155NFT(name, symbol, uri);
         collections[name] = Collection(address(newCollection), name, true);
 
         emit CollectionCreated(name, address(newCollection), true);
@@ -47,6 +47,6 @@ contract NftMarketplace is ReentrancyGuard {
         require(collection.collectionAddress != address(0), "Collection does not exist");
         require(collection.isERC1155, "Not an ERC1155 collection");
 
-        ERC1155Collection(collection.collectionAddress).mintNFT(recipient, amount, data);
+        ArtworkERC1155NFT(collection.collectionAddress).mintNFT(recipient, amount, data);
     }
 }
