@@ -1,45 +1,34 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+import "./ArtworkERC721NFT.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract NftMarketplace is ReentrancyGuard {
 
- 
-    address payable public immutable feeAccount; // the account that recieves fees
-    uint256 public immutable feePercent; // the fee percentage on sales
-    uint256 public collectionCount;
-    uint256 public artworkCount;
-
-    // Struct to store Collection details
     struct Collection {
+        address collectionAddress;
         string name;
-        uint256[] artworkIds;
-        IERC721 nft;
     }
 
-    struct Artwork {
-        string name;
-        uint256 tokenId;
-        IERC721 nft;
-        uint256 price;
-        string artist;
+    mapping(string => Collection) public collections;
+
+    event CollectionCreated(string indexed name, address indexed collectionAddress);
+
+    function createERC721Collection(string memory name, string memory symbol) public {
+        require(collections[name].collectionAddress == address(0), "Collection already exists");
+
+        ArtworkERC721NFT newCollection = new ArtworkERC721NFT(name, symbol);
+        collections[name] = Collection(address(newCollection), name);
+
+        emit CollectionCreated(name, address(newCollection));
     }
 
-    constructor(uint _feePercent){
-        feeAccount = payable(msg.sender);
-        feePercent = _feePercent;
-    }
+    function mintInERC721Collection(string memory name, address tokenURI) public {
+        Collection memory collection = collections[name];
+        require(collection.collectionAddress != address(0), "Collection does not exist");
 
-    function mintNFT(string memory _tokenURI, uint artWork, string collection) external payable returns (uint) {
-         address NFT_address = IArtworks_registry(registry_address).getNFTContractForCollection(collection)
-        IERC721(NFT_address).mint(_tokenURI)
-        IArtworks_registry(address).markMinted(artWork);
+        ArtworkERC721NFT(collection.collectionAddress).mintNFT(tokenURI);
     }
-
-    function createArtCollection(string memory name) {
-    NFTContract newColll = new NFTContract(params);
-    IArtworks_registry(address).addCollection(address(newColll), params);
-  }
 }

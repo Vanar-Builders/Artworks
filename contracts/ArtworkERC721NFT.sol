@@ -12,15 +12,15 @@ contract ArtworkERC721NFT is ERC721URIStorage, Ownable {
 
     uint256 public constant ROYALTY_PERCENTAGE = 30; // 30% royalty on NFT minting
 
-    constructor () ERC721("ArtWork NFT", "ArtWork"){}
+    constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
 
     function mintNFT(string memory _tokenURI) external payable returns (uint) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
 
-        // Calculate and accumulate royalty
-        uint256 royaltyAmount = msg.value.mul(ROYALTY_PERCENTAGE).div(100);
-        royaltyBalance = royaltyBalance.add(royaltyAmount);
+        // // Calculate and accumulate royalty
+        // uint256 royaltyAmount = msg.value.mul(ROYALTY_PERCENTAGE).div(100);
+        // royaltyBalance = royaltyBalance.add(royaltyAmount);
 
         _safeMint(msg.sender, tokenId);
         _setTokenURI(tokenId, _tokenURI);
