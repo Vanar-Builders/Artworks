@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
-// Import ERC721 extension for storing token URIs
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "./ArtworkERC721NFT.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ArtworkNFT is ERC721URIStorage {
-
-    // Declares a private counter for tracking token IDs.
+contract TokenRegistry is Ownable {
+        // Declares a private counter for tracking token IDs.
     Counters.Counter private _tokenIds;
 
     // struct to manage the Artist's information
     struct Artist {
         string name;
-        string profileURI;
+    }
+
+    struct User {
+        string name;
     }
 
     // struct to manage the Artwork's information
@@ -63,19 +65,6 @@ contract ArtworkNFT is ERC721URIStorage {
         emit ArtworkAdded(newArtworkId, msg.sender, _title);
     }
 
-    // Function to mint an NFT for a artwork, transferring the payment to the artist
-    function mintNFT(string memory artworkURI) external payable returns (uint256) {
-        require(artworks[_artworkId].id != 0, "Artwork does not exist");
-        require(!artworks[_artworkId].isNFTMinted, "NFT already minted for this artwork");
-        require(msg.value >= artworks[_artworkId].nftPrice, "Insufficient payment");
-
-        artworks[_artworkId].isNFTMinted = true;
-        _safeMint(msg.sender, _artworkId);
-
-        payable(artworks[_artworkId].artist).transfer(msg.value);
-        emit NFTMinted(_artworkId, msg.sender, msg.value);
-    }
-
     // Function to create a collection with a given name
     function createCollection(string memory _name) external {
         require(collections[msg.sender][_name].artworkIds.length == 0, "Collection already exists");
@@ -101,5 +90,5 @@ contract ArtworkNFT is ERC721URIStorage {
         require(artworks[_artworkId].id != 0, "Artwork does not exist");
         return artworks[_artworkId];
     }
-
 }
+
