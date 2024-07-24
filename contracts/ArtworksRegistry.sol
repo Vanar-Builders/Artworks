@@ -38,14 +38,18 @@ contract ArtworksRegistry is Ownable {
     event CollectionCreated(address indexed creator, string name);
     event ArtworkAddedToCollection(address indexed creator, string collectionName, uint256 artworkId);
 
+    modifier onlyRegisteredArtist() {
+        require(bytes(artists[msg.sender].name).length > 0, "Artist not registered");
+        _;
+    }
+
     function registerArtist(string memory _name, string memory _profileURI) external {
         require(bytes(artists[msg.sender].name).length == 0, "Artist already registered");
         artists[msg.sender] = Artist(_name, _profileURI);
         emit ArtistRegistered(msg.sender, _name);
     }
 
-    function addArtwork(string memory _title, string memory _pictureURI, uint256 _nftPrice) external {
-        require(bytes(artists[msg.sender].name).length > 0, "Artist not registered");
+    function addArtwork(string memory _title, string memory _pictureURI, uint256 _nftPrice) external onlyRegisteredArtist {
         _tokenIds.increment();
         uint256 newArtworkId = _tokenIds.current();
 
@@ -53,13 +57,13 @@ contract ArtworksRegistry is Ownable {
         emit ArtworkAdded(newArtworkId, msg.sender, _title);
     }
 
-    function createCollection(string memory _name) external {
+    function createCollection(string memory _name) external onlyRegisteredArtist {
         require(collections[msg.sender][_name].artworkIds.length == 0, "Collection already exists");
         collections[msg.sender][_name] = Collection(_name, new uint256[](0));
         emit CollectionCreated(msg.sender, _name);
     }
 
-    function addArtworkToCollection(string memory _collectionName, uint256 _artworkId) external {
+    function addArtworkToCollection(string memory _collectionName, uint256 _artworkId) external onlyRegisteredArtist {
         require(artworks[_artworkId].id != 0, "Artwork does not exist");
         require(collections[msg.sender][_collectionName].artworkIds.length > 0, "Collection does not exist");
         collections[msg.sender][_collectionName].artworkIds.push(_artworkId);

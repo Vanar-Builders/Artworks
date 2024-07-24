@@ -21,7 +21,7 @@ contract ArtworkERC1155NFT is ERC1155, Ownable, ERC2981PerTokenRoyalties {
         return super.supportsInterface(interfaceId);
     }
 
-    constructor(string memory _name, string memory _symbol, string memory uri) ERC1155(uri) Ownable(msg.sender) {
+    constructor(string memory _name, string memory _symbol, string memory uri) ERC1155(uri) {
         name = _name;
         symbol = _symbol;
         tokenCounter = 0;
@@ -43,22 +43,18 @@ contract ArtworkERC1155NFT is ERC1155, Ownable, ERC2981PerTokenRoyalties {
         uint256[] memory amounts,
         address[] memory royaltyRecipients,
         uint256[] memory royaltyValues
-    ) external {
+    ) external onlyOwner {
         require(
             ids.length == royaltyRecipients.length &&
                 ids.length == royaltyValues.length,
-            'ERC1155: Arrays length mismatch'
+            "ERC1155: Arrays length mismatch"
         );
 
-        _mintBatch(to, ids, amounts, '');
+        _mintBatch(to, ids, amounts, "");
 
         for (uint256 i; i < ids.length; i++) {
             if (royaltyValues[i] > 0) {
-                _setTokenRoyalty(
-                    ids[i],
-                    royaltyRecipients[i],
-                    royaltyValues[i]
-                );
+                _setTokenRoyalty(ids[i], royaltyRecipients[i], royaltyValues[i]);
             }
         }
     }

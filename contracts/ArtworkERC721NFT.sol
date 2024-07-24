@@ -35,8 +35,7 @@ contract ArtworkERC721NFT is ERC721URIStorage, Ownable, ERC2981ContractWideRoyal
         return tokenId;
     }
 
-    function payRoyalties() external {
-
+    function payRoyalties() external onlyOwner {
         uint256 amount = royaltyBalance;
         royaltyBalance = 0;
 
@@ -47,22 +46,21 @@ contract ArtworkERC721NFT is ERC721URIStorage, Ownable, ERC2981ContractWideRoyal
     }
 
     /// @notice Allows to set the royalties on the contract
-    /// @dev This function in a real contract should be protected with a onlyOwner (or equivalent) modifier
+    /// @dev This function in a real contract should be protected with a onlyOwner modifier
     /// @param recipient the royalties recipient
     /// @param value royalties value (between 0 and 10000)
-    function setRoyalties(address recipient, uint256 value) public {
+    function setRoyalties(address recipient, uint256 value) public onlyOwner {
         _setRoyalties(recipient, value);
     }
 
     /// @notice Mint several tokens at once
     /// @param recipients an array of recipients for each token
-    function mintBatch(address[] memory recipients) external {
-        uint256 tokenId = nextTokenId;
+    function mintBatch(address[] memory recipients) external onlyOwner {
+        uint256 tokenId = _tokenIdCounter.current();
         for (uint256 i; i < recipients.length; i++) {
-            _safeMint(recipients[i], tokenId, '');
+            _safeMint(recipients[i], tokenId);
             tokenId++;
+            _tokenIdCounter.increment();
         }
-
-        nextTokenId = tokenId;
     }
 }

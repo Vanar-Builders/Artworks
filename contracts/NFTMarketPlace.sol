@@ -1,134 +1,151 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "./ArtworkERC721NFT.sol";
 import "./ArtworkERC1155NFT.sol";
 import "./ArtworksRegistry.sol";
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+contract NftMarketplace is Ownable, ERC721Holder, ERC1155Holder {
+    ArtworksRegistry public registry;
 
-
-contract NFTMarketplace is ReentrancyGuard {
     struct Collection {
-        address collectionAddress;
+        address nftContract;
         string name;
-        bool isERC1155;
     }
 
     struct Listing {
         address seller;
-        address collectionAddress;
+        address nftContract;
         uint256 tokenId;
-        uint256 price;
-        bool isERC1155;
         uint256 amount;
+        uint256 price;
     }
 
-    mapping(string => Collection) public collections;
+    mapping(address => mapping(string => Collection)) public collections;
     mapping(address => mapping(uint256 => Listing)) public listings;
-    ArtworksRegistry public registry;
 
-    event CollectionCreated(string indexed name, address indexed collectionAddress, bool isERC1155);
-    event NFTMinted(uint256 indexed tokenId, address indexed collectionAddress, uint256 tokenIdInCollection, bool isERC1155);
-    event NFTListed(address indexed seller, address indexed collectionAddress, uint256 indexed tokenId, uint256 price, bool isERC1155, uint256 amount);
-    event NFTSold(address indexed buyer, address indexed collectionAddress, uint256 indexed tokenId, uint256 price, bool isERC1155, uint256 amount);
+    event CollectionCreated(address indexed creator, address nftContract, string name);
+    event NFTMinted(address indexed nftContract, uint256 tokenId, address indexed to, uint256 amount);
+    event NFTListed(address indexed seller, address indexed nftContract, uint256 indexed tokenId, uint256 amount, uint256 price);
+    event NFTBought(address indexed buyer, address indexed nftContract, uint256 indexed tokenId, uint256 amount, uint256 price);
+    event NFTListingCancelled(address indexed seller, address indexed nftContract, uint256 indexed tokenId);
 
-    constructor(address _registryAddress) {
-        registry = ArtworksRegistry(_registryAddress);
+    constructor(address _registry) {
+        registry = ArtworksRegistry(_registry);
     }
 
-    function createERC721Collection(string memory name, string memory symbol) public {
-        require(collections[name].collectionAddress == address(0), "Collection already exists");
+    function createERC721Collection(string memory name, string memory symbol, string memory collectionName) external {
+        require(bytes(collections[msg.sender][collectionName].name).length == 0, "Collection already exists");
+        require(bytes(registry.artists(msg.sender).name).length > 0, "Not a registered artist");
 
-        ArtworkERC721NFT newCollection = new ArtworkERC721NFT(name, symbol);
-        collections[name] = Collection(address(newCollection), name, false);
+        ArtworkERC721NFT nft = new ArtworkERC721NFT(name, symbol);
+        collections[msg.sender][collectionName] = Collection(address(nft), collectionName);
 
-        // Register the collection in the registry
-        registry.createCollection(name);
-
-        emit CollectionCreated(name, address(newCollection), false);
+        emit CollectionCreated(msg.sender, address(nft), collectionName);
     }
 
-    function createArtworkERC1155NFT(string memory name, string memory symbol, string memory uri) public {
-        require(collections[name].collectionAddress == address(0), "Collection already exists");
+    function createERC1155Collection(string memory uri, string memory collectionName) external {
+        require(bytes(collections[msg.sender][collectionName].name).length == 0, "Collection already exists");
+        require(bytes(registry.artists(msg.sender).name).length > 0, "Not a registered artist");
 
-        ArtworkERC1155NFT newCollection = new ArtworkERC1155NFT(name, symbol, uri);
-        collections[name] = Collection(address(newCollection), name, true);
+        ArtworkERC1155NFT nft = new ArtworkERC1155NFT("ArtworkERC1155", "A1155", uri);
+        collections[msg.sender][collectionName] = Collection(address(nft), collectionName);
 
-        // Register the collection in the registry
-        registry.createCollection(name);
-
-        emit CollectionCreated(name, address(newCollection), true);
+        emit CollectionCreated(msg.sender, address(nft), collectionName);
     }
 
-    function mintInERC721Collection(string memory name, address recipient, string memory title, string memory pictureURI, uint256 nftPrice) public {
-        Collection memory collection = collections[name];
-        require(collection.collectionAddress != address(0), "Collection does not exist");
-        require(!collection.isERC1155, "Not an ERC721 collection");
+    function mintERC721NFT(string memory collectionName, string memory tokenURI) external {
+        Collection storage collection = collections[msg.sender][collectionName];
+        require(bytes(collection.name).length > 0, "Collection does not exist");
 
-        ArtworkERC721NFT ArtworkERC721NFT = ArtworkERC721NFT(collection.collectionAddress);
-        uint256 tokenId = ArtworkERC721NFT.mintNFT(recipient);
+        ArtworkERC721NFT nftContract = ArtworkERC721NFT(collection.nftContract);
+        uint256 tokenId = nftContract.mintNFT(tokenURI);
 
-        // Add the artwork to the registry
-        registry.addArtwork(title, pictureURI, nftPrice);
-        uint256 artworkId = registry.getArtworkId();
-
-        // Associate the minted NFT with the artwork
-        registry.addArtworkToCollection(name, artworkId);
-
-        emit NFTMinted(tokenId, collection.collectionAddress, tokenId, false);
+        emit NFTMinted(address(nftContract), tokenId, msg.sender, 1);
     }
 
-    function mintInArtworkERC1155NFT(string memory name, address recipient, uint256 amount, bytes memory data, string memory title, string memory pictureURI, uint256 nftPrice) public {
-        Collection memory collection = collections[name];
-        require(collection.collectionAddress != address(0), "Collection does not exist");
-        require(collection.isERC1155, "Not an ERC1155 collection");
+    function mintERC1155NFT(string memory collectionName, uint256 amount, bytes memory data, uint256 royaltyValue) external {
+        Collection storage collection = collections[msg.sender][collectionName];
+        require(bytes(collection.name).length > 0, "Collection does not exist");
 
-        ArtworkERC1155NFT artworkERC1155NFT = ArtworkERC1155NFT(collection.collectionAddress);
-        uint256 tokenId = artworkERC1155NFT.mintNFT(recipient, amount, data);
+        ArtworkERC1155NFT nftContract = ArtworkERC1155NFT(collection.nftContract);
+        uint256 tokenId = nftContract.mintNFT(msg.sender, amount, data, royaltyValue);
 
-        // Add the artwork to the registry
-        registry.addArtwork(title, pictureURI, nftPrice);
-        uint256 artworkId = registry.getArtworkId();
-
-        // Associate the minted NFT with the artwork
-        registry.addArtworkToCollection(name, artworkId);
-
-        emit NFTMinted(tokenId, collection.collectionAddress, tokenId, true);
+        emit NFTMinted(address(nftContract), tokenId, msg.sender, amount);
     }
 
-        function listNFT(address collectionAddress, uint256 tokenId, uint256 price, bool isERC1155, uint256 amount) public {
-        require(price > 0, "Price must be greater than 0");
+    function listNFT(address nftContract, uint256 tokenId, uint256 amount, uint256 price) external {
+        IERC721 erc721 = IERC721(nftContract);
+        IERC1155 erc1155 = IERC1155(nftContract);
 
-        if (isERC1155) {
-            IERC1155(collectionAddress).safeTransferFrom(msg.sender, address(this), tokenId, amount, "");
+        if (erc721.supportsInterface(type(IERC721).interfaceId)) {
+            require(erc721.ownerOf(tokenId) == msg.sender, "Not the owner of the ERC721 token");
+            erc721.safeTransferFrom(msg.sender, address(this), tokenId);
+        } else if (erc1155.supportsInterface(type(IERC1155).interfaceId)) {
+            require(erc1155.balanceOf(msg.sender, tokenId) >= amount, "Not enough balance of the ERC1155 token");
+            erc1155.safeTransferFrom(msg.sender, address(this), tokenId, amount, "");
         } else {
-            IERC721(collectionAddress).transferFrom(msg.sender, address(this), tokenId);
+            revert("Unsupported token type");
         }
 
-        listings[collectionAddress][tokenId] = Listing(msg.sender, collectionAddress, tokenId, price, isERC1155, amount);
+        listings[nftContract][tokenId] = Listing({
+            seller: msg.sender,
+            nftContract: nftContract,
+            tokenId: tokenId,
+            amount: amount,
+            price: price
+        });
 
-        emit NFTListed(msg.sender, collectionAddress, tokenId, price, isERC1155, amount);
+        emit NFTListed(msg.sender, nftContract, tokenId, amount, price);
     }
 
-    function buyNFT(address collectionAddress, uint256 tokenId) public payable nonReentrant {
-        Listing memory listing = listings[collectionAddress][tokenId];
-        require(listing.price > 0, "NFT not listed for sale");
-        require(msg.value >= listing.price, "Insufficient payment");
+    function cancelListing(address nftContract, uint256 tokenId) external {
+        Listing memory listing = listings[nftContract][tokenId];
+        require(listing.seller == msg.sender, "Not the seller");
 
-        uint256 price = listing.price;
-        address seller = listing.seller;
+        IERC721 erc721 = IERC721(nftContract);
+        IERC1155 erc1155 = IERC1155(nftContract);
 
-        if (listing.isERC1155) {
-            IERC1155(collectionAddress).safeTransferFrom(address(this), msg.sender, tokenId, listing.amount, "");
+        if (erc721.supportsInterface(type(IERC721).interfaceId)) {
+            erc721.safeTransferFrom(address(this), msg.sender, tokenId);
+        } else if (erc1155.supportsInterface(type(IERC1155).interfaceId)) {
+            erc1155.safeTransferFrom(address(this), msg.sender, tokenId, listing.amount, "");
         } else {
-            IERC721(collectionAddress).transferFrom(address(this), msg.sender, tokenId);
+            revert("Unsupported token type");
         }
 
-        payable(seller).transfer(price);
+        delete listings[nftContract][tokenId];
 
-        delete listings[collectionAddress][tokenId];
+        emit NFTListingCancelled(msg.sender, nftContract, tokenId);
+    }
 
-        emit NFTSold(msg.sender, collectionAddress, tokenId, price, listing.isERC1155, listing.amount);
+    function buyNFT(address nftContract, uint256 tokenId) external payable {
+        Listing memory listing = listings[nftContract][tokenId];
+        require(listing.price == msg.value, "Incorrect value sent");
+
+        IERC721 erc721 = IERC721(nftContract);
+        IERC1155 erc1155 = IERC1155(nftContract);
+
+        if (erc721.supportsInterface(type(IERC721).interfaceId)) {
+            erc721.safeTransferFrom(address(this), msg.sender, tokenId);
+        } else if (erc1155.supportsInterface(type(IERC1155).interfaceId)) {
+            erc1155.safeTransferFrom(address(this), msg.sender, tokenId, listing.amount, "");
+        } else {
+            revert("Unsupported token type");
+        }
+
+        payable(listing.seller).transfer(msg.value);
+        delete listings[nftContract][tokenId];
+
+        emit NFTBought(msg.sender, nftContract, tokenId, listing.amount, listing.price);
+    }
+
+    function getListing(address nftContract, uint256 tokenId) external view returns (Listing memory) {
+        return listings[nftContract][tokenId];
     }
 }
