@@ -15,11 +15,23 @@ contract NFTMarketplace is ReentrancyGuard {
         bool isERC1155;
     }
 
+    struct Listing {
+        address seller;
+        address collectionAddress;
+        uint256 tokenId;
+        uint256 price;
+        bool isERC1155;
+        uint256 amount;
+    }
+
     mapping(string => Collection) public collections;
+    mapping(address => mapping(uint256 => Listing)) public listings;
     ArtworksRegistry public registry;
 
     event CollectionCreated(string indexed name, address indexed collectionAddress, bool isERC1155);
     event NFTMinted(uint256 indexed tokenId, address indexed collectionAddress, uint256 tokenIdInCollection, bool isERC1155);
+    event NFTListed(address indexed seller, address indexed collectionAddress, uint256 indexed tokenId, uint256 price, bool isERC1155, uint256 amount);
+    event NFTSold(address indexed buyer, address indexed collectionAddress, uint256 indexed tokenId, uint256 price, bool isERC1155, uint256 amount);
 
     constructor(address _registryAddress) {
         registry = ArtworksRegistry(_registryAddress);
@@ -83,5 +95,40 @@ contract NFTMarketplace is ReentrancyGuard {
         registry.addArtworkToCollection(name, artworkId);
 
         emit NFTMinted(tokenId, collection.collectionAddress, tokenId, true);
+    }
+
+        function listNFT(address collectionAddress, uint256 tokenId, uint256 price, bool isERC1155, uint256 amount) public {
+        require(price > 0, "Price must be greater than 0");
+
+        if (isERC1155) {
+            IERC1155(collectionAddress).safeTransferFrom(msg.sender, address(this), tokenId, amount, "");
+        } else {
+            IERC721(collectionAddress).transferFrom(msg.sender, address(this), tokenId);
+        }
+
+        listings[collectionAddress][tokenId] = Listing(msg.sender, collectionAddress, tokenId, price, isERC1155, amount);
+
+        emit NFTListed(msg.sender, collectionAddress, tokenId, price, isERC1155, amount);
+    }
+
+    function buyNFT(address collectionAddress, uint256 tokenId) public payable nonReentrant {
+        Listing memory listing = listings[collectionAddress][tokenId];
+        require(listing.price > 0, "NFT not listed for sale");
+        require(msg.value >= listing.price, "Insufficient payment");
+
+        uint256 price = listing.price;
+        address seller = listing.seller;
+
+        if (listing.isERC1155) {
+            IERC1155(collectionAddress).safeTransferFrom(address(this), msg.sender, tokenId, listing.amount, "");
+        } else {
+            IERC721(collectionAddress).transferFrom(address(this), msg.sender, tokenId);
+        }
+
+        payable(seller).transfer(price);
+
+        delete listings[collectionAddress][tokenId];
+
+        emit NFTSold(msg.sender, collectionAddress, tokenId, price, listing.isERC1155, listing.amount);
     }
 }

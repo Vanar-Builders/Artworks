@@ -1,23 +1,25 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
-// will compile your contracts, add the Hardhat Runtime Environment's members to the
-// global scope, and execute the script.
 const hre = require("hardhat");
 
 async function main() {
-  const ArtworkNFT721 = await ethers.deployContract("contracts/ArtworkERC721NFT.sol:ArtworkERC721NFT");
-  const artworkNFT721 = await ArtworkNFT721.waitForDeployment();
-  console.log("Deploying Contract...")
-  console.log("Contract deployed to address:",  await artworkNFT721.getAddress());
+  // Deploy ArtworksRegistry contract
+  const ArtworksRegistry = await ethers.deployContract("ArtworksRegistry");
+  const artworksRegistry = await ArtworksRegistry.waitForDeployment();
+  console.log("Deploying ArtworksRegistry contract...");
+  console.log(
+    "ArtworksRegistry deployed to address:",
+    await artworksRegistry.getAddress()
+  );
 
-  const NftMarketplace = await ethers.deployContract("contracts/NftMarketplace.sol:NftMarketplace");
+  // Deploy NFTMarketplace contract with the address of ArtworksRegistry
+  const NftMarketplace = await ethers.deployContract("NftMarketplace", [
+    await artworksRegistry.getAddress(),
+  ]);
   const nftMarketplace = await NftMarketplace.waitForDeployment();
-  console.log("Deploying Contract...")
-  console.log("Contract deployed to address:",  await nftMarketplace.getAddress());
-
-
+  console.log("Deploying NFTMarketplace contract...");
+  console.log(
+    "NFTMarketplace deployed to address:",
+    await nftMarketplace.getAddress()
+  );
 }
 
 // We recommend this pattern to be able to use async/await everywhere
