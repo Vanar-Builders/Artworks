@@ -21,10 +21,11 @@ contract ArtworkERC1155NFT is ERC1155, Ownable, ERC2981PerTokenRoyalties {
         return super.supportsInterface(interfaceId);
     }
 
-    constructor(string memory _name, string memory _symbol, string memory uri) ERC1155(uri) {
+    constructor(string memory _name, string memory _symbol, string memory uri, address artist) ERC1155(uri) {
         name = _name;
         symbol = _symbol;
         tokenCounter = 0;
+        transferOwnership(artist); // Transfer ownership to the artist
     }
 
     function mintNFT(address recipient, uint256 amount, bytes memory data, uint256 royaltyValue) public onlyOwner returns (uint256) {

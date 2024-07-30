@@ -13,7 +13,14 @@ contract ArtworkERC721NFT is ERC721URIStorage, Ownable, ERC2981ContractWideRoyal
 
     uint256 public constant ROYALTY_PERCENTAGE = 30; // 30% royalty on NFT minting
 
-    constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
+    constructor(string memory name, string memory symbol, address artist) ERC721(name, symbol) {
+        transferOwnership(artist); // Transfer ownership to the artist
+    }
+
+    modifier onlyOwner {
+        require(msg.sender == owner);
+        _;
+    }
 
     /// @inheritdoc	ERC165
     function supportsInterface(bytes4 interfaceId)
