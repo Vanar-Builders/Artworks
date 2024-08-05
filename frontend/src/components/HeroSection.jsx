@@ -1,3 +1,6 @@
+import { useDispatch } from "react-redux";
+import { changeAddress } from "../features/authentication";
+
 function Logos() {
     const data = [
         {
@@ -67,6 +70,16 @@ function Logos() {
 
 
 export default function HeroSection() {
+    const dispatch = useDispatch();
+    function ConnectWallet(){
+        if(window.ethereum){
+            window.ethereum.request({method: 'eth_requestAccounts'}).then((res) => {
+                dispatch(changeAddress(res[0]))
+            })
+        }else{
+            alert('Install MetaMask')
+        }
+    }
     return (
         <>
             <div className="bg-[linear-gradient(0deg,#1E1E1E_70%,#282637_100%,#282637_100%)] flex relative flex-col pl-8 w-full md:pl-5 md:max-w-full">
@@ -92,7 +105,7 @@ export default function HeroSection() {
                                     </div>
                                     <div className="flex flex-col mt-3.5 max-md:max-w-full">
                                         <div style={{ fontSize: "43px" }} className="font-bold bg-clip-text leading-[62px] max-md:max-w-full text-2xl max-md:leading-[50px] text-white hidden md:block">
-                                        Unleash Your Creativity: Join the NFT<br /> <span className="bg-[#7A63FF] rounded-md py-1 px-2"> Art Revolution</span><br />
+                                        Unleash Your Creativity: Join the NFT<br /> <span className="rounded-md py-1 px-2" style={{background: 'linear-gradient(15deg, #13547a 0%, #80d0c7 100%)'}}> Art Revolution</span><br />
                                         </div>
                                         <div style={{ fontSize: "30px" }} className="font-bold bg-clip-text leading-[62px] max-md:max-w-full text-md px-2 max-md:leading-[47px] text-white block md:hidden">
                                             Transforming Legal Practices with Custom<br /> <span className="bg-[#7A63FF] rounded-md px-2 py-1">AI Solutions</span><br />
@@ -103,9 +116,9 @@ export default function HeroSection() {
                                     </div>
                                 </div>
                                 <div className="flex flex-col-reverse md:flex-row gap-2 px-1 items-center mt-8 max-md:flex-wrap">
-                                    <a href="https://app.apollo.io/#/meet/khb-lec-ve6/30-min" className="justify-center py-3.5 my-auto text-base font-medium text-white bg-[linear-gradient(90deg,#7A63FF_3.56%,#9B93E9_106.6%)] rounded-[50px] cursor-pointer w-full md:w-[220px] md:px-10 text-center mt-4 md:mt-0">
+                                    <div style={{background: 'linear-gradient(15deg, #13547a 0%, #80d0c7 100%)'}} onClick={ConnectWallet} className="justify-center py-3.5 my-auto text-base font-medium text-white rounded-[50px] cursor-pointer w-full md:w-[220px] md:px-10 text-center mt-4 md:mt-0">
                                         Connect Wallet
-                                    </a>
+                                    </div>
                                     <div className="flex gap-3">
                                         <div className="flex flex-col self-start px-3 py-2 rounded-lg border border-violet-500 border-solid bg-white bg-opacity-10 max-md:px-5">
                                             <div className="self-center text-xl font-bold leading-5 bg-clip-text bg-[linear-gradient(90deg,#7A63FF_3.56%,#9B93E9_106.6%)] text-[#7A63FF]">
