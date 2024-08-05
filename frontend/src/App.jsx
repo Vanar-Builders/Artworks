@@ -1,12 +1,13 @@
 import { useState } from "react";
 import Header from "./components/Header"
+import HeroSection from "./components/HeroSection";
 
 function App() {
   const [show, setShow] = useState(false);
   return (
     <div>
       <div className='relative'>
-        <div className="flex flex-col justify-center items-start text-base font-medium leading-6 text-right text-white capitalize md:pr-5 bg-[#755DFF]">
+        <div className="flex flex-col justify-center items-start text-base font-medium leading-6 text-right text-white capitalize md:pr-5 " style={{background: 'linear-gradient(15deg, #13547a 0%, #80d0c7 100%)'}}>
           <div className="overflow-hidden relative flex-col justify-center items-center py-1.5 md:pr-16 md:pl-32 w-full min-h-[35px] w-[1469px] px-2 md:px-5 md:max-w-full">
             <img
               loading="lazy"
@@ -21,8 +22,8 @@ function App() {
         {
           !show &&
           <>
-            {/* <HeroSection />
-            <Experience /> */}
+            <HeroSection />
+            {/* <Experience /> */}
             <img className='hidden md:block absolute top-0 left-0 opacity-20' style={{ zIndex: 1 }} src={'assets/left.png'} alt="" />
             <img className='hidden md:block absolute top-0 right-0 opacity-20' style={{ zIndex: 1 }} src={'assets/right.png'} alt="" />
           </>
