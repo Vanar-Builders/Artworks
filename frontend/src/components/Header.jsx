@@ -1,5 +1,6 @@
 import { useDispatch } from "react-redux";
 import { changeAddress } from "../features/authentication";
+import { Link } from "react-router-dom";
 export default function Header({ show }) {
     const dispatch = useDispatch();
     function ConnectWallet(){
@@ -24,7 +25,7 @@ export default function Header({ show }) {
                 </a>
                 <div className="flex gap-5 justify-between items-center text-base text-right max-md:flex-wrap max-md:max-w-full">
                     <div>
-                        <h1 className="text-white font-semibold leading-10">Create</h1>
+                        <Link to="/create" className="text-white font-semibold leading-10">Create</Link>
                     </div>
                     <div className="flex gap-2.5 font-medium text-white">
                         <div onClick={ConnectWallet} style={{background: 'linear-gradient(15deg, #13547a 0%, #80d0c7 100%)'}} className="justify-center px-8 py-3.5 rounded-[50px] max-md:px-5 cursor-pointer">
