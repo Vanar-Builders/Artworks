@@ -1,28 +1,63 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+// src/NavBar.js
 
-const Navbar = () => {
+import React, { useState } from 'react';
+import WalletConnection from './WalletConnection';
+
+const NavBar = () => {
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
+
+  const handleWalletConnect = () => {
+    setIsWalletConnected(true);
+  };
+
+  const handleWalletDisconnect = () => {
+    setIsWalletConnected(false);
+  };
+
   return (
-    <nav className="left-navbar">
-      <ul>
-        <li>
-          <Link to="/">Artworks</Link>
-        </li>
-        <li>
-          <Link to="/shop">Shop</Link>
-        </li>
-        <li>
-          <Link to="/submit-your-work">Submit Your Artworks</Link>
-        </li>
-        <li>
-          <Link to="/about">About</Link>
-        </li>
-        <li>
-          <Link to="/faqs">FAQs & Tutorials</Link>
-        </li>
-      </ul>
+    <nav style={styles.nav}>
+      <div style={styles.title}>My App</div>
+      <div style={styles.buttons}>
+        {isWalletConnected ? (
+          <>
+            <button style={styles.button}>Profile</button>
+            <button style={styles.button}>Create</button>
+          </>
+        ) : (
+          <WalletConnection
+            onWalletConnect={handleWalletConnect}
+            onWalletDisconnect={handleWalletDisconnect}
+          />
+        )}
+      </div>
     </nav>
   );
 };
 
-export default Navbar;
+const styles = {
+  nav: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '10px 20px',
+    backgroundColor: '#333',
+    color: '#fff'
+  },
+  title: {
+    fontSize: '24px'
+  },
+  buttons: {
+    display: 'flex',
+    alignItems: 'center'
+  },
+  button: {
+    marginLeft: '10px',
+    padding: '8px 16px',
+    backgroundColor: '#555',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  }
+};
+
+export default NavBar;

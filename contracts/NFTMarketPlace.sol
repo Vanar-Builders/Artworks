@@ -42,20 +42,22 @@ contract NftMarketplace is Ownable, ERC721Holder, ERC1155Holder {
     event NFTListingCancelled(address indexed seller, address indexed nftContract, uint256 indexed tokenId);
 
     // Constructor to initialize the marketplace with the ArtworksRegistry address
-    constructor(address _registry) {
+    constructor(address _registry) Ownable(msg.sender) {
         registry = ArtworksRegistry(_registry);
     }
 
     // Function to create a new ERC721 collection for an artist
-    function createERC721Collection(string memory name, string memory symbol, string memory collectionName) external {
+    function createERC721Collection(string memory nftTile, string memory symbol, string memory collectionName) external {
         // Ensure the collection doesn't already exist
         require(bytes(collections[msg.sender][collectionName].name).length == 0, "Collection already exists");
         // Ensure the caller is a registered artist
-        require(bytes(registry.artists(msg.sender).name).length > 0, "Not a registered artist");
+        string memory name = registry.getArtist(msg.sender);
+        require(bytes(name).length > 0, "Not a registered artist");
 
         // Create a new ERC721 contract and store it in the collections mapping
-        ArtworkERC721NFT nft = new ArtworkERC721NFT(name, symbol, msg.sender);
+        ArtworkERC721NFT nft = new ArtworkERC721NFT(nftTile, symbol, msg.sender);
         collections[msg.sender][collectionName] = Collection(address(nft), collectionName);
+        registry.createCollection(collectionName);
 
         // Emit an event for the creation of the collection
         emit CollectionCreated(msg.sender, address(nft), collectionName);
@@ -66,10 +68,11 @@ contract NftMarketplace is Ownable, ERC721Holder, ERC1155Holder {
         // Ensure the collection doesn't already exist
         require(bytes(collections[msg.sender][collectionName].name).length == 0, "Collection already exists");
         // Ensure the caller is a registered artist
-        require(bytes(registry.artists(msg.sender).name).length > 0, "Not a registered artist");
+        string memory name = registry.getArtist(msg.sender);
+        require(bytes(name).length > 0, "Not a registered artist");
 
         // Create a new ERC1155 contract and store it in the collections mapping
-        ArtworkERC1155NFT nft = new ArtworkERC1155NFT("ArtworkERC1155", "A1155", uri, msg.sender);
+        ArtworkERC1155NFT nft = new ArtworkERC1155NFT(uri, msg.sender);
         collections[msg.sender][collectionName] = Collection(address(nft), collectionName);
 
         // Emit an event for the creation of the collection
@@ -77,7 +80,7 @@ contract NftMarketplace is Ownable, ERC721Holder, ERC1155Holder {
     }
 
     // Function to mint a new ERC721 NFT
-    function mintERC721NFT(string memory collectionName, string memory tokenURI) external {
+    function mintERC721NFT(string memory collectionName, string memory tokenURI) external payable {
         // Ensure the collection exists
         Collection storage collection = collections[msg.sender][collectionName];
         require(bytes(collection.name).length > 0, "Collection does not exist");
@@ -94,7 +97,7 @@ contract NftMarketplace is Ownable, ERC721Holder, ERC1155Holder {
     }
 
     // Function to mint a new ERC1155 NFT
-    function mintERC1155NFT(string memory collectionName, uint256 amount, bytes memory data, uint256 royaltyValue) external {
+    function mintERC1155NFT(string memory collectionName, uint256 amount, bytes memory data)  external payable {
         // Ensure the collection exists
         Collection storage collection = collections[msg.sender][collectionName];
         require(bytes(collection.name).length > 0, "Collection does not exist");
@@ -104,7 +107,7 @@ contract NftMarketplace is Ownable, ERC721Holder, ERC1155Holder {
         require(msg.sender == nftContract.owner(), "Only collection owner can mint NFTs");
 
         // Mint the NFT and get the tokenId
-        uint256 tokenId = nftContract.mintNFT(msg.sender, amount, data, royaltyValue);
+        uint256 tokenId = nftContract.mintNFT(msg.sender, amount, data);
 
         // Emit an event for the minting of the NFT
         emit NFTMinted(address(nftContract), tokenId, msg.sender, amount);

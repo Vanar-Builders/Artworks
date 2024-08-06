@@ -2,15 +2,16 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract ArtworksRegistry is Ownable {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
+    uint256 private _tokenIds;
 
+    // 1. artist will register
+    // 2. connect metamask
+    // we will address as unique identifier
     struct Artist {
         string name;
-        string profileURI;
+        address walletAddress;
     }
 
     struct Artwork {
@@ -43,15 +44,24 @@ contract ArtworksRegistry is Ownable {
         _;
     }
 
-    function registerArtist(string memory _name, string memory _profileURI) external {
+    constructor(address initialOwner) Ownable(initialOwner) {
+        transferOwnership(initialOwner);
+    }
+
+    // implement get artist information against address
+    function getArtist(address _artist) view public returns (string memory) {
+        return artists[_artist].name;
+    }
+
+    function registerArtist(string memory _name, address _walletAddress) external {
         require(bytes(artists[msg.sender].name).length == 0, "Artist already registered");
-        artists[msg.sender] = Artist(_name, _profileURI);
+        artists[msg.sender] = Artist(_name, _walletAddress);
         emit ArtistRegistered(msg.sender, _name);
     }
 
     function addArtwork(string memory _title, string memory _pictureURI, uint256 _nftPrice) external onlyRegisteredArtist {
-        _tokenIds.increment();
-        uint256 newArtworkId = _tokenIds.current();
+        _tokenIds++;
+        uint256 newArtworkId = _tokenIds;
 
         artworks[newArtworkId] = Artwork(newArtworkId, msg.sender, _title, _pictureURI, _nftPrice, false);
         emit ArtworkAdded(newArtworkId, msg.sender, _title);

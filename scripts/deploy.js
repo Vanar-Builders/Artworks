@@ -1,10 +1,21 @@
 const hre = require("hardhat");
+const dotenv = require("dotenv");
+
+// Load environment variables from .env file
+dotenv.config();
 
 async function main() {
+  // Get the deployer's signer
+  const [deployer] = await ethers.getSigners();
+  console.log("Deploying contracts with the account:", deployer.address);
+
   // Deploy ArtworksRegistry contract
   const ArtworksRegistry = await ethers.deployContract("ArtworksRegistry");
   const artworksRegistry = await ArtworksRegistry.waitForDeployment();
   console.log("Deploying ArtworksRegistry contract...");
+
+  //const artworksRegistry = await ArtworksRegistry.deploy(pass-arguments)
+
   console.log(
     "ArtworksRegistry deployed to address:",
     await artworksRegistry.getAddress()
@@ -22,9 +33,11 @@ async function main() {
   );
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+// Execute the main function
+main()
+  .then(() => process.exit(0)) // Exit with success status
+  .catch((error) => {
+    // Log error and exit with failure status
+    console.error(error);
+    process.exit(1);
+  });

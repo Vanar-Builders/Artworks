@@ -7,10 +7,8 @@ import "./royalties/ERC2981PerTokenRoyalties.sol";
 
 contract ArtworkERC1155NFT is ERC1155, Ownable, ERC2981PerTokenRoyalties {
     uint256 public tokenCounter;
-    string public name;
-    string public symbol;
 
-    /// @inheritdoc	ERC165
+    /// @inheritdoc ERC165
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -21,20 +19,18 @@ contract ArtworkERC1155NFT is ERC1155, Ownable, ERC2981PerTokenRoyalties {
         return super.supportsInterface(interfaceId);
     }
 
-    constructor(string memory _name, string memory _symbol, string memory uri, address artist) ERC1155(uri) {
-        name = _name;
-        symbol = _symbol;
+    // folder link used in uri
+    constructor(string memory uri, address artist) ERC1155(uri) Ownable(msg.sender) {
         tokenCounter = 0;
         transferOwnership(artist); // Transfer ownership to the artist
     }
 
-    function mintNFT(address recipient, uint256 amount, bytes memory data, uint256 royaltyValue) public onlyOwner returns (uint256) {
+    // pass empty string to data
+    function mintNFT(address recipient, uint256 amount, bytes memory data) public onlyOwner returns (uint256) {
         uint256 newTokenId = tokenCounter;
         _mint(recipient, newTokenId, amount, data);
         tokenCounter += 1;
-        if (royaltyValue > 0) {
-            _setTokenRoyalty(newTokenId, recipient, royaltyValue);
-        }
+
         return newTokenId;
     }
 
