@@ -19,7 +19,7 @@ contract ArtworkERC1155NFT is ERC1155, Ownable, ERC2981PerTokenRoyalties {
         return super.supportsInterface(interfaceId);
     }
 
-    // folder link used in uri
+    // pinata folder link used in uri
     constructor(string memory uri, address artist) ERC1155(uri) Ownable(msg.sender) {
         tokenCounter = 0;
         transferOwnership(artist); // Transfer ownership to the artist

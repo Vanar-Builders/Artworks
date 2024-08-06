@@ -10,16 +10,20 @@ async function main() {
   console.log("Deploying contracts with the account:", deployer.address);
 
   // Deploy ArtworksRegistry contract
-  const ArtworksRegistry = await ethers.deployContract("ArtworksRegistry");
+  const ArtworksRegistry = await ethers.deployContract("ArtworksRegistry", [deployer.address]);
   const artworksRegistry = await ArtworksRegistry.waitForDeployment();
   console.log("Deploying ArtworksRegistry contract...");
-
-  //const artworksRegistry = await ArtworksRegistry.deploy(pass-arguments)
 
   console.log(
     "ArtworksRegistry deployed to address:",
     await artworksRegistry.getAddress()
   );
+
+  // // Deploy CollectionManager
+  // const CollectionManager = await ethers.getContractFactory("CollectionManager");
+  // const collectionManager = await CollectionManager.deploy();
+  // await collectionManager.deployed();
+  // console.log("CollectionManager deployed to:", collectionManager.address);
 
   // Deploy NFTMarketplace contract with the address of ArtworksRegistry
   const NftMarketplace = await ethers.deployContract("NftMarketplace", [

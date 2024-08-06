@@ -59,9 +59,8 @@ contract ArtworksRegistry is Ownable {
         emit ArtistRegistered(msg.sender, _name);
     }
 
-    function addArtwork(string memory _title, string memory _pictureURI, uint256 _nftPrice) external onlyRegisteredArtist {
-        _tokenIds++;
-        uint256 newArtworkId = _tokenIds;
+    function addArtwork(string memory _title, string memory _pictureURI, uint256 _nftPrice, uint256 tokenId) external onlyRegisteredArtist {
+        uint256 newArtworkId = tokenId;
 
         artworks[newArtworkId] = Artwork(newArtworkId, msg.sender, _title, _pictureURI, _nftPrice, false);
         emit ArtworkAdded(newArtworkId, msg.sender, _title);
