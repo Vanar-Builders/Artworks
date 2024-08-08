@@ -41,5 +41,42 @@ export const useIPFS = () => {
     }
   };
 
-  return { uploadToIPFS, isUploading, error };
+  const createAndUploadMetadata = async (imageIPFSUrl, name, description) => {
+    try {
+      const metadata = {
+        name,
+        description,
+        image: imageIPFSUrl,
+      };
+
+      const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
+      const res = await axios.post(url, metadata, {
+        headers: {
+          'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_API_KEY,
+          'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY,
+          "Content-Type": "application/json"
+        },
+      });
+
+      return `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;
+    } catch (err) {
+      setError('Failed to upload metadata to IPFS');
+      throw err;
+    }
+  };
+
+  const uploadImageAndMetadata = async (file, name, description) => {
+    try {
+      const imageIPFSUrl = await uploadToIPFS(file, name);
+      const metadataIPFSUrl = await createAndUploadMetadata(imageIPFSUrl, name, description);
+
+      // Now you can use metadataIPFSUrl as a parameter in your Solidity mint function.
+      return metadataIPFSUrl;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  return { uploadImageAndMetadata, isUploading, error };
 };
+ 

@@ -1,7 +1,16 @@
 import { useState } from "react";
+import { useIPFS } from '../components/UploadIPFS';
+import { useWeb3 } from '../components/ConnectWallet';
 
 export const CreateSingleNFT = () => {
     const [selectedFile, setSelectedFile] = useState(null);
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [supply, setSupply] = useState('');
+    const { uploadImageAndMetadata, isUploading, error } = useIPFS();
+    const { marketplaceContract, account, connected } = useWeb3(); // Access Web3 context
+    const [message, setMessage] = useState('');
+    const [collections, setCollections] = useState('');
 
     const handleDivClick = () => {
         document.getElementById('fileInput').click();
@@ -12,7 +21,41 @@ export const CreateSingleNFT = () => {
         console.log(event.target.files[0]);
     };
 
-    const [collections, setCollection] = useState([])
+    const handleMint = async () => {
+        if (!selectedFile || !title || !description || !supply) {
+            alert("Please fill in all fields and upload an image.");
+            return;
+        }
+
+        if (!connected) {
+            alert("Please connect your wallet first.");
+            return;
+        }
+
+        setMessage('');
+        try {
+            const metadataURI = await uploadImageAndMetadata(selectedFile, title, description);
+            console.log("Metadata URI:", metadataURI);
+            
+            // Assume ERC721 (single NFT) minting
+            const isERC721 = supply === '1';
+            const data = "0x"; // Placeholder for additional data if needed
+
+            // Call the mintNFT function from the marketplace contract
+            await marketplaceContract.methods.mintNFT(
+                title,        // collectionName
+                metadataURI,  // tokenURI
+                supply,       // amount
+                data,
+                isERC721
+            ).send({ from: account });
+
+            setMessage('NFT minted successfully!');
+        } catch (err) {
+            console.error("Error minting NFT:", err);
+            setMessage('Error minting NFT. Please check the console for details.');
+        }
+    };
 
     return (
         <div className="bg-[linear-gradient(0deg,#1E1E1E_70%,#282637_100%,#282637_100%)] pb-20 min-h-screen">
@@ -49,16 +92,42 @@ export const CreateSingleNFT = () => {
                         {
                             !collections.length && <p className="text-red-400 mt-2">You first need a collection. <span style={{ textDecoration: "underline", cursor: "pointer" }}>Click here</span>  to create one</p>
                         }
-                        <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Title</h1>
-                        <input type="text" className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" placeholder="Title"/>
+                                                <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Title</h1>
+                        <input 
+                            type="text" 
+                            className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" 
+                            placeholder="Title" 
+                            value={title} 
+                            onChange={(e) => setTitle(e.target.value)}
+                        />
 
                         <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Description</h1>
-                        <textarea rows="10" type="text" className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] px-2 py-2 text-[14px] rounded-lg text-white" placeholder="Description"></textarea>
+                        <textarea 
+                            rows="10" 
+                            className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] px-2 py-2 text-[14px] rounded-lg text-white" 
+                            placeholder="Description"
+                            value={description} 
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
 
                         <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Supply</h1>
-                        <input type="text" className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" placeholder="Supply"/>
+                        <input 
+                            type="text" 
+                            className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" 
+                            placeholder="Supply"
+                            value={supply}
+                            onChange={(e) => setSupply(e.target.value)}
+                        />
 
-                        <button style={{background: 'linear-gradient(15deg, #13547a 0%, #80d0c7 100%)'}} className="justify-center px-8 py-3.5 rounded-2xl max-md:px-5 cursor-pointer w-[140px] mt-5 hover:opacity-55">MINT</button>
+                        <button 
+                            onClick={handleMint}
+                            style={{background: 'linear-gradient(15deg, #13547a 0%, #80d0c7 100%)'}} 
+                            className="justify-center px-8 py-3.5 rounded-2xl max-md:px-5 cursor-pointer w-[140px] mt-5 hover:opacity-55"
+                            disabled={isUploading}
+                        >
+                            {isUploading ? "Minting..." : "MINT"}
+                        </button>
+                        {error && <p className="text-red-400 mt-2">{error}</p>}
                     </div>
                     <div className="max-w-[370px] w-full">
                         <h1 className="text-white font-bold text-lg font-sans">Preview</h1>
@@ -81,5 +150,6 @@ export const CreateSingleNFT = () => {
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
+
