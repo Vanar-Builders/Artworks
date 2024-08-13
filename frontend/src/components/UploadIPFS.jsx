@@ -5,7 +5,7 @@ export const useIPFS = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState(null);
 
-  const uploadToIPFS = async (file, name = 'File') => {
+  const uploadToIPFS = async (file, folderName = '', fileName = 'File') => {
     setIsUploading(true);
     setError(null);
 
@@ -15,7 +15,10 @@ export const useIPFS = () => {
       formData.append('file', file);
 
       const metadata = JSON.stringify({
-        name: name,
+        name: fileName,
+        keyvalues: {
+          folder: folderName
+        }
       });
       formData.append('pinataMetadata', metadata);
 
@@ -32,7 +35,7 @@ export const useIPFS = () => {
         },
       });
 
-      return `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;
+      return res.data;
     } catch (err) {
       setError('Failed to upload file to IPFS');
       throw err;
@@ -41,7 +44,7 @@ export const useIPFS = () => {
     }
   };
 
-  const createAndUploadMetadata = async (imageIPFSUrl, name, description) => {
+  const createAndUploadMetadata = async (imageIPFSUrl, name, description, folderName = '') => {
     try {
       const metadata = {
         name,
@@ -56,27 +59,61 @@ export const useIPFS = () => {
           'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY,
           "Content-Type": "application/json"
         },
+        pinataMetadata: {
+          name: 'metadata.json',
+          keyvalues: {
+            folder: folderName
+          }
+        }
       });
 
-      return `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;
+      return res.data;
     } catch (err) {
       setError('Failed to upload metadata to IPFS');
       throw err;
     }
   };
 
-  const uploadImageAndMetadata = async (file, name, description) => {
+  const uploadImageAndMetadata = async (file, name, description, folderName = '') => {
     try {
-      const imageIPFSUrl = await uploadToIPFS(file, name);
-      const metadataIPFSUrl = await createAndUploadMetadata(imageIPFSUrl, name, description);
+      const imageUploadResult = await uploadToIPFS(file, folderName, name);
+      const imageIPFSUrl = `ipfs://${imageUploadResult.IpfsHash}`;
+      const metadataUploadResult = await createAndUploadMetadata(imageIPFSUrl, name, description, folderName);
 
-      // Now you can use metadataIPFSUrl as a parameter in your Solidity mint function.
-      return metadataIPFSUrl;
+      return {
+        imageIpfsHash: imageUploadResult.IpfsHash,
+        metadataIpfsHash: metadataUploadResult.IpfsHash
+      };
     } catch (err) {
       throw err;
     }
   };
 
-  return { uploadImageAndMetadata, isUploading, error };
+
+  const createFolder = async (folderName) => {
+    try {
+      const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
+      const folderMetadata = {
+        name: folderName,
+        keyvalues: {
+          folder: folderName
+        }
+      };
+  
+      const res = await axios.post(url, folderMetadata, {
+        headers: {
+          'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_API_KEY,
+          'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY,
+          "Content-Type": "application/json"
+        },
+      });
+  
+      return res.data.IpfsHash;
+    } catch (err) {
+      setError('Failed to create folder in IPFS');
+      throw err;
+    }
+  };
+
+  return { uploadToIPFS, createAndUploadMetadata, uploadImageAndMetadata, createFolder, isUploading, error };
 };
- 

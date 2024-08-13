@@ -1,11 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"
+import { useWeb3 } from '../components/ConnectWallet'; // Adjust the import path as needed
+import { useIPFS } from "../components/UploadIPFS";
+
 
 export const CreateCollection = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedFile1, setSelectedFile1] = useState(null);
     const [selectedFile2, setSelectedFile2] = useState(null);
     const [selected, setSelected] = useState(1);
+
+    const { web3js, account, connected, marketplaceContract } = useWeb3();
+    const navigate = useNavigate();
+
+    const [title, setTitle] = useState("");
+    const [symbol, setSymbol] = useState("");
+    const [description, setDescription] = useState("");
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    const { uploadToIPFS, createFolder } = useIPFS();
+
+    useEffect(() => {
+        if (!connected) {
+            navigate('/connect'); // Redirect to connection page if not connected
+        }
+    }, [connected, navigate]);
 
     const handleDivClick = () => {
         document.getElementById('fileInput').click();
@@ -29,6 +48,46 @@ export const CreateCollection = () => {
 
     const handleFileChange2 = (event) => {
         setSelectedFile2(event.target.files[0]);
+    };
+
+    const handleSubmit = async () => {
+        if (!connected || !marketplaceContract) {
+            alert("Please connect your wallet first.");
+            return;
+        }
+
+        const folderName = `${title}_${Date.now()}`;
+        const folderCID = await createFolder(folderName);
+        const folderUri = `ipfs://${folderCID}`;
+
+        const logoFile = await uploadToIPFS(selectedFile, folderName, 'logo');
+        const featuredImageFile = await uploadToIPFS(selectedFile1, folderName, 'featured');
+        const bannerImageFile = await uploadToIPFS(selectedFile2, folderName, 'banner');
+
+        setIsProcessing(true);
+
+        try {
+            const isERC721 = selected === 1;
+            // const uri = "https://example.com/metadata/"; // Replace with your actual metadata URI
+
+            // Call the createCollection function on the smart contract
+            const result = await marketplaceContract.methods.createCollection(
+                title,
+                symbol,
+                folderUri,
+                title, // Using title as collection name
+                isERC721
+            ).send({ from: account });
+
+            console.log("Collection created, transaction hash:", result.transactionHash);
+            alert("Collection created successfully!");
+            // You can add further logic here, like redirecting the user or clearing the form
+        } catch (error) {
+            console.error("Error creating collection:", error);
+            alert("Error creating collection. Please try again.");
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
@@ -105,15 +164,34 @@ export const CreateCollection = () => {
                             <div className="flex justify-between w-full mt-7">
                                 <div className="w-full mr-4">
                                     <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Title</h1>
-                                    <input type="text" className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" placeholder="Title" />
+                                    <input 
+                                        type="text" 
+                                        className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" 
+                                        placeholder="Title" 
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                    />
                                 </div>
                                 <div className="w-full">
                                     <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Symbol</h1>
-                                    <input type="text" className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" placeholder="Symbol" />
+                                    <input 
+                                        type="text" 
+                                        className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" 
+                                        placeholder="Symbol" 
+                                        value={symbol}
+                                        onChange={(e) => setSymbol(e.target.value)}
+                                    />
                                 </div>
                             </div>
                             <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Description</h1>
-                            <textarea rows="7" type="text" className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] px-2 py-2 text-[14px] rounded-lg text-white" placeholder="Description"></textarea>
+                            <textarea 
+                                rows="7" 
+                                type="text" 
+                                className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] px-2 py-2 text-[14px] rounded-lg text-white" 
+                                placeholder="Description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                            ></textarea>
                             <div>
                                 <h1 className="text-white font-bold text-lg font-sans mt-4">Customize your Contract App</h1>
                                 <div className="flex gap-10 w-full mt-4">
@@ -133,7 +211,14 @@ export const CreateCollection = () => {
                                     <input type="text" className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" disabled placeholder="Vanry" />
                                 </div>
                                 <div className="w-full flex justify-end flex-1">
-                                    <button style={{ background: 'linear-gradient(15deg, #13547a 0%, #80d0c7 100%)' }} className="justify-center px-8 py-3.5 rounded-2xl max-md:px-5 cursor-pointer w-[140px] mt-5 hover:opacity-55">Submit</button>
+                                <button 
+                                    style={{ background: 'linear-gradient(15deg, #13547a 0%, #80d0c7 100%)' }} 
+                                    className="justify-center px-8 py-3.5 rounded-2xl max-md:px-5 cursor-pointer w-[140px] mt-5 hover:opacity-55"
+                                    onClick={handleSubmit}
+                                    disabled={isProcessing}
+                                >
+                                    {isProcessing ? "Processing..." : "Submit"}
+                                </button>
                                 </div>
                             </div>
                         </div>
