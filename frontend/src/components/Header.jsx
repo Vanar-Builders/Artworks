@@ -5,7 +5,7 @@ import { useWeb3, ConnectWallet } from "./ConnectWallet";
 import { useSelector } from "react-redux";
 
 export default function Header({ show }) {
-    const address = useSelector(state=>state.auth.address)
+    const {address} = useSelector(state=>state.auth)
     const { web3js, account, disconnectWallet, connectWallet, connected, artworksRegistryContract, marketplaceContract } = useWeb3();
 
     const handleDisconnect = () => {

@@ -9,15 +9,14 @@ import { ConnectWallet } from './components/ConnectWallet.jsx'; // Import your C
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    
+
     <Router>
       <Provider store={store}>
-      <ConnectWallet>
-        <App />
-      </ConnectWallet>
+        <ConnectWallet>
+          <App />
+        </ConnectWallet>
       </Provider>
     </Router>
-    
-    
+
   </React.StrictMode>,
 )
