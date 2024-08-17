@@ -2,6 +2,8 @@ import React, { useEffect, useState, createContext, useContext } from 'react';
 import Web3 from 'web3';
 import NFTMarketplaceABI from '../contracts/NftMarketplace.json';
 import ArtworksRegistryABI from '../contracts/ArtworksRegistry.json';
+import { useDispatch } from "react-redux";
+import { changeAddress, removeAddress } from "../features/authentication";
 
 // Create a context for Web3
 const Web3Context = createContext();
@@ -10,6 +12,7 @@ const Web3Context = createContext();
 export const useWeb3 = () => useContext(Web3Context);
 
 export function ConnectWallet({ children }) {
+  const dispatch = useDispatch();
   const [web3js, setWeb3] = useState(null);
   const [signer, setSigner] = useState(null);
   const [artworksRegistryContract, setArtworksRegistryContract] = useState(null);
@@ -39,7 +42,7 @@ export function ConnectWallet({ children }) {
         if (currentChainId != 78600) {
           alert("Connect to Vanguard Testnet")
         }
-        console.log(account);
+        dispatch(changeAddress(account))
         const marketplaceContract = new web3js.eth.Contract(NFTMarketplaceABI.abi, marketplaceAddress);
         const registryContract = new web3js.eth.Contract(ArtworksRegistryABI.abi, RegistryAddress);
         setArtworksRegistryContract(registryContract);
@@ -60,6 +63,11 @@ export function ConnectWallet({ children }) {
     setMarketplaceContract(null);
     setArtworksRegistryContract(null);
     setConnected(false);
+    dispatch(removeAddress())
+
+    window.localStorage.removeItem('connectedAccount');
+    window.localStorage.removeItem('walletConnected'); 
+    window.location.reload();
   };
 
   return (
