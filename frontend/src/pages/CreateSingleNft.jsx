@@ -8,9 +8,12 @@ export const CreateSingleNFT = () => {
     const [description, setDescription] = useState('');
     const [supply, setSupply] = useState('');
     const { uploadImageAndMetadata, isUploading, error } = useIPFS();
-    const { marketplaceContract, account, connected } = useWeb3(); // Access Web3 context
+    const { account, connected } = useWeb3(); // Access Web3 context
     const [message, setMessage] = useState('');
     const [collections, setCollections] = useState('');
+
+    const marketplaceAddress = "0x675651F49D85d78cC45e2915bf7061C6f908Ef71";
+    const marketplaceContract = new web3js.eth.Contract(NFTMarketplaceABI.abi, marketplaceAddress);
 
     const handleDivClick = () => {
         document.getElementById('fileInput').click();
