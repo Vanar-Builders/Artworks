@@ -1,30 +1,33 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"
-import { useWeb3 } from '../components/ConnectWallet'; // Adjust the import path as needed
 import { useIPFS } from "../components/UploadIPFS";
-
+import { useSelector } from "react-redux";
+import Web3 from 'web3';
+import NFTMarketplaceABI from '../contracts/NftMarketplace.json';
 
 export const CreateCollection = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedFile1, setSelectedFile1] = useState(null);
     const [selectedFile2, setSelectedFile2] = useState(null);
     const [selected, setSelected] = useState(1);
+    const address = useSelector(state => state.auth.address);
+    const marketplaceAddress = "0x675651F49D85d78cC45e2915bf7061C6f908Ef71";
 
-    const { web3js, account, connected, marketplaceContract } = useWeb3();
     const navigate = useNavigate();
 
     const [title, setTitle] = useState("");
     const [symbol, setSymbol] = useState("");
     const [description, setDescription] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
+    const [web3js, setWeb3] = useState(null);
 
     const { uploadToIPFS, createFolder } = useIPFS();
 
     useEffect(() => {
-        if (!connected) {
-            navigate('/connect'); // Redirect to connection page if not connected
+        if (!address) {
+            navigate('/'); // Redirect to connection page if not connected
         }
-    }, [connected, navigate]);
+    }, [address]);
 
     const handleDivClick = () => {
         document.getElementById('fileInput').click();
@@ -50,8 +53,16 @@ export const CreateCollection = () => {
         setSelectedFile2(event.target.files[0]);
     };
 
+    useEffect(() => {
+        if (window.ethereum) {
+            const web3Instance = new Web3(window.ethereum);
+            setWeb3(web3Instance);
+        }
+    }, []);
+
     const handleSubmit = async () => {
-        if (!connected || !marketplaceContract) {
+        const marketplaceContract = new web3js.eth.Contract(NFTMarketplaceABI.abi, marketplaceAddress);
+        if (!address || !marketplaceContract) {
             alert("Please connect your wallet first.");
             return;
         }
@@ -59,6 +70,7 @@ export const CreateCollection = () => {
         const folderName = `${title}_${Date.now()}`;
         const folderCID = await createFolder(folderName);
         const folderUri = `ipfs://${folderCID}`;
+
 
         const logoFile = await uploadToIPFS(selectedFile, folderName, 'logo');
         const featuredImageFile = await uploadToIPFS(selectedFile1, folderName, 'featured');
@@ -75,7 +87,7 @@ export const CreateCollection = () => {
                 title,
                 symbol,
                 folderUri,
-                title, // Using title as collection name
+                title,
                 isERC721
             ).send({ from: account });
 
@@ -164,30 +176,30 @@ export const CreateCollection = () => {
                             <div className="flex justify-between w-full mt-7">
                                 <div className="w-full mr-4">
                                     <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Title</h1>
-                                    <input 
-                                        type="text" 
-                                        className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" 
-                                        placeholder="Title" 
+                                    <input
+                                        type="text"
+                                        className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white"
+                                        placeholder="Title"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                     />
                                 </div>
                                 <div className="w-full">
                                     <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Symbol</h1>
-                                    <input 
-                                        type="text" 
-                                        className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" 
-                                        placeholder="Symbol" 
+                                    <input
+                                        type="text"
+                                        className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white"
+                                        placeholder="Symbol"
                                         value={symbol}
                                         onChange={(e) => setSymbol(e.target.value)}
                                     />
                                 </div>
                             </div>
                             <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Description</h1>
-                            <textarea 
-                                rows="7" 
-                                type="text" 
-                                className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] px-2 py-2 text-[14px] rounded-lg text-white" 
+                            <textarea
+                                rows="7"
+                                type="text"
+                                className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] px-2 py-2 text-[14px] rounded-lg text-white"
                                 placeholder="Description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
@@ -211,14 +223,14 @@ export const CreateCollection = () => {
                                     <input type="text" className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" disabled placeholder="Vanry" />
                                 </div>
                                 <div className="w-full flex justify-end flex-1">
-                                <button 
-                                    style={{ background: 'linear-gradient(15deg, #13547a 0%, #80d0c7 100%)' }} 
-                                    className="justify-center px-8 py-3.5 rounded-2xl max-md:px-5 cursor-pointer w-[140px] mt-5 hover:opacity-55"
-                                    onClick={handleSubmit}
-                                    disabled={isProcessing}
-                                >
-                                    {isProcessing ? "Processing..." : "Submit"}
-                                </button>
+                                    <button
+                                        style={{ background: 'linear-gradient(15deg, #13547a 0%, #80d0c7 100%)' }}
+                                        className="justify-center px-8 py-3.5 rounded-2xl max-md:px-5 cursor-pointer w-[140px] mt-5 hover:opacity-55"
+                                        onClick={handleSubmit}
+                                        disabled={isProcessing}
+                                    >
+                                        {isProcessing ? "Processing..." : "Submit"}
+                                    </button>
                                 </div>
                             </div>
                         </div>

@@ -29,8 +29,8 @@ export const useIPFS = () => {
 
       const res = await axios.post(url, formData, {
         headers: {
-          'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_API_KEY,
-          'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY,
+          'pinata_api_key': import.meta.env.VITE_APP_PINATA_API_KEY,
+          'pinata_secret_api_key': import.meta.env.VITE_APP_PINATA_SECRET_API_KEY,
           "Content-Type": "multipart/form-data"
         },
       });
@@ -55,8 +55,8 @@ export const useIPFS = () => {
       const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
       const res = await axios.post(url, metadata, {
         headers: {
-          'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_API_KEY,
-          'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY,
+          'pinata_api_key': import.meta.env.VITE_APP_PINATA_API_KEY,
+          'pinata_secret_api_key': import.meta.env.VITE_APP_PINATA_SECRET_API_KEY,
           "Content-Type": "application/json"
         },
         pinataMetadata: {
@@ -102,8 +102,8 @@ export const useIPFS = () => {
   
       const res = await axios.post(url, folderMetadata, {
         headers: {
-          'pinata_api_key': process.env.NEXT_PUBLIC_PINATA_API_KEY,
-          'pinata_secret_api_key': process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY,
+          'pinata_api_key': import.meta.env.VITE_APP_PINATA_API_KEY,
+          'pinata_secret_api_key': import.meta.env.VITE_APP_PINATA_SECRET_API_KEY,
           "Content-Type": "application/json"
         },
       });
