@@ -36,13 +36,8 @@ contract ArtworksRegistry is Ownable {
     event CollectionCreated(address indexed creator, string name);
     event ArtworkAddedToCollection(address indexed creator, string collectionName, uint256 artworkId);
 
-<<<<<<< HEAD
     modifier onlyRegisteredArtist() {
         require(bytes(artists[tx.origin].name).length > 0, "Artist not registered");
-=======
-    modifier onlyRegisteredArtist(address _artist) {
-        require(bytes(artists[_artist].name).length > 0, "Artist not registered");
->>>>>>> 31c07f7df8d29eab1ba9286b0ee27d2af5240f01
         _;
     }
 
@@ -64,7 +59,6 @@ contract ArtworksRegistry is Ownable {
         external onlyRegisteredArtist(_artist) 
     {
         uint256 newArtworkId = tokenId;
-<<<<<<< HEAD
         artworks[newArtworkId] = Artwork(newArtworkId, tx.origin, _title, _pictureURI, _nftPrice, false);
         emit ArtworkAdded(newArtworkId, tx.origin, _title);
     }
@@ -73,34 +67,15 @@ contract ArtworksRegistry is Ownable {
         require(collections[tx.origin][_name].artworkIds.length == 0, "Collection already exists");
         collections[tx.origin][_name] = Collection(_name, new uint256[](0));
         emit CollectionCreated(tx.origin, _name);
-=======
-
-        artworks[newArtworkId] = Artwork(newArtworkId, _artist, _title, _pictureURI, _nftPrice, false);
-        emit ArtworkAdded(newArtworkId, _artist, _title);
-    }
-
-    function createCollection(address _artist, string memory _name) 
-        external onlyRegisteredArtist(_artist) 
-    {
-        require(collections[_artist][_name].artworkIds.length == 0, "Collection already exists");
-        collections[_artist][_name] = Collection(_name, new uint256[](0));
-        emit CollectionCreated(_artist, _name);
->>>>>>> 31c07f7df8d29eab1ba9286b0ee27d2af5240f01
     }
 
     function addArtworkToCollection(address _artist, string memory _collectionName, uint256 _artworkId) 
         external onlyRegisteredArtist(_artist) 
     {
         require(artworks[_artworkId].id != 0, "Artwork does not exist");
-<<<<<<< HEAD
         require(collections[tx.origin][_collectionName].artworkIds.length > 0, "Collection does not exist");
         collections[tx.origin][_collectionName].artworkIds.push(_artworkId);
         emit ArtworkAddedToCollection(tx.origin, _collectionName, _artworkId);
-=======
-        require(collections[_artist][_collectionName].artworkIds.length > 0, "Collection does not exist");
-        collections[_artist][_collectionName].artworkIds.push(_artworkId);
-        emit ArtworkAddedToCollection(_artist, _collectionName, _artworkId);
->>>>>>> 31c07f7df8d29eab1ba9286b0ee27d2af5240f01
     }
 
     function getCollection(address _user, string memory _collectionName) 
