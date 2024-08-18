@@ -40,7 +40,7 @@ contract ArtworksRegistry is Ownable {
     event ArtworkAddedToCollection(address indexed creator, string collectionName, uint256 artworkId);
 
     modifier onlyRegisteredArtist() {
-        require(bytes(artists[msg.sender].name).length > 0, "Artist not registered");
+        require(bytes(artists[tx.origin].name).length > 0, "Artist not registered");
         _;
     }
 
@@ -61,22 +61,21 @@ contract ArtworksRegistry is Ownable {
 
     function addArtwork(string memory _title, string memory _pictureURI, uint256 _nftPrice, uint256 tokenId) external onlyRegisteredArtist {
         uint256 newArtworkId = tokenId;
-
-        artworks[newArtworkId] = Artwork(newArtworkId, msg.sender, _title, _pictureURI, _nftPrice, false);
-        emit ArtworkAdded(newArtworkId, msg.sender, _title);
+        artworks[newArtworkId] = Artwork(newArtworkId, tx.origin, _title, _pictureURI, _nftPrice, false);
+        emit ArtworkAdded(newArtworkId, tx.origin, _title);
     }
 
     function createCollection(string memory _name) external onlyRegisteredArtist {
-        require(collections[msg.sender][_name].artworkIds.length == 0, "Collection already exists");
-        collections[msg.sender][_name] = Collection(_name, new uint256[](0));
-        emit CollectionCreated(msg.sender, _name);
+        require(collections[tx.origin][_name].artworkIds.length == 0, "Collection already exists");
+        collections[tx.origin][_name] = Collection(_name, new uint256[](0));
+        emit CollectionCreated(tx.origin, _name);
     }
 
     function addArtworkToCollection(string memory _collectionName, uint256 _artworkId) external onlyRegisteredArtist {
         require(artworks[_artworkId].id != 0, "Artwork does not exist");
-        require(collections[msg.sender][_collectionName].artworkIds.length > 0, "Collection does not exist");
-        collections[msg.sender][_collectionName].artworkIds.push(_artworkId);
-        emit ArtworkAddedToCollection(msg.sender, _collectionName, _artworkId);
+        require(collections[tx.origin][_collectionName].artworkIds.length > 0, "Collection does not exist");
+        collections[tx.origin][_collectionName].artworkIds.push(_artworkId);
+        emit ArtworkAddedToCollection(tx.origin, _collectionName, _artworkId);
     }
 
     function getCollection(address _user, string memory _collectionName) external view returns (uint256[] memory) {
