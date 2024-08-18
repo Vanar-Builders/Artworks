@@ -20,8 +20,8 @@ export function ConnectWallet({ children }) {
   const [account, setAccount] = useState(null);
   const [connected, setConnected] = useState(false);
 
-  const marketplaceAddress = "0x675651F49D85d78cC45e2915bf7061C6f908Ef71";
-  const RegistryAddress = "0xb3d3F57272F3bF36d12f632220b5fc37C526805F";
+  const marketplaceAddress = import.meta.env.VITE_APP_MARKETPLACE_CONTRACT_ADDRESS;
+  const RegistryAddress = import.meta.env.VITE_APP_REGISTRY_CONTRACT_ADDRESS;
 
   useEffect(() => {
     if (window.ethereum) {

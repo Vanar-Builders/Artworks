@@ -11,7 +11,7 @@ export const CreateCollection = () => {
     const [selectedFile2, setSelectedFile2] = useState(null);
     const [selected, setSelected] = useState(1);
     const address = useSelector(state => state.auth.address);
-    const marketplaceAddress = "0x675651F49D85d78cC45e2915bf7061C6f908Ef71";
+    const marketplaceAddress = import.meta.env.VITE_APP_MARKETPLACE_CONTRACT_ADDRESS
 
     const navigate = useNavigate();
 
@@ -71,31 +71,39 @@ export const CreateCollection = () => {
         const folderCID = await createFolder(folderName);
         const folderUri = `ipfs://${folderCID}`;
 
-
-        const logoFile = await uploadToIPFS(selectedFile, folderName, 'logo');
-        const featuredImageFile = await uploadToIPFS(selectedFile1, folderName, 'featured');
-        const bannerImageFile = await uploadToIPFS(selectedFile2, folderName, 'banner');
+        await uploadToIPFS(selectedFile, folderName, 'logo');
+        await uploadToIPFS(selectedFile1, folderName, 'featured');
+        await uploadToIPFS(selectedFile2, folderName, 'banner');
 
         setIsProcessing(true);
 
         try {
             const isERC721 = selected === 1;
-            // const uri = "https://example.com/metadata/"; // Replace with your actual metadata URI
-
-            // Call the createCollection function on the smart contract
+            const gasPrice = await web3js.eth.getGasPrice();
+            const gasEstimate = await marketplaceContract.methods.createCollection(
+                title,
+                symbol,
+                folderUri,
+                title,
+                isERC721
+            ).estimateGas({ from: address });
+            
             const result = await marketplaceContract.methods.createCollection(
                 title,
                 symbol,
                 folderUri,
                 title,
                 isERC721
-            ).send({ from: account });
+            ).send({
+                from: address,
+                gas: gasEstimate,
+                gasPrice: gasPrice
+            });
 
             console.log("Collection created, transaction hash:", result.transactionHash);
             alert("Collection created successfully!");
-            // You can add further logic here, like redirecting the user or clearing the form
         } catch (error) {
-            console.error("Error creating collection:", error);
+            console.error("Error creating collection:", error.message, error.stack);
             alert("Error creating collection. Please try again.");
         } finally {
             setIsProcessing(false);
@@ -105,11 +113,11 @@ export const CreateCollection = () => {
     return (
         <div className="bg-[linear-gradient(0deg,#1E1E1E_70%,#282637_100%,#282637_100%)] pb-20">
             <div className="md:mx-10 md:pt-7">
-                <h1 className="text-5xl font-bold text-white font-sans">Create New Collection
+                <h1 className="text-3xl md:text-5xl font-bold text-white font-sans">Create New Collection
                 </h1>
                 <div className="flex w-full gap-10 mt-10">
                     <div className="w-full">
-                        <div className="flex justify-center w-full">
+                        <div className="flex flex-wrap justify-center w-full">
                             <div className="max-w-[400px] w-full">
                                 <h1 className="text-white font-bold text-lg font-sans">Logo Image*</h1>
                                 <div>
@@ -131,7 +139,7 @@ export const CreateCollection = () => {
                                     />
                                 </div>
                             </div>
-                            <div className="max-w-[600px] md:ml-4 w-full">
+                            <div className="max-w-[400px] md:max-w-[600px] mt-5 md:mt-0 md:ml-4 w-full">
                                 <h1 className="text-white font-bold text-lg font-sans">Featured Image</h1>
                                 <div>
                                     <div
@@ -153,7 +161,7 @@ export const CreateCollection = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex flex-col w-[1020px] mt-10 mx-auto">
+                        <div className="flex flex-col max-w-[400px] md:max-w-[1020px] w-full mt-10 mx-auto">
                             <h1 className="text-white font-bold text-lg font-sans">Banner Image</h1>
                             <div className="">
                                 <div
@@ -206,12 +214,12 @@ export const CreateCollection = () => {
                             ></textarea>
                             <div>
                                 <h1 className="text-white font-bold text-lg font-sans mt-4">Customize your Contract App</h1>
-                                <div className="flex gap-10 w-full mt-4">
-                                    <div onClick={() => { setSelected(1) }} className={`flex-1 px-3 py-2 rounded-2xl cursor-pointer h-[150px] ${selected === 1 && 'bg-[linear-gradient(0deg,#4C4430_0%,#4B3B48_0%,#4C4430_100%)]'}`} style={{ border: `${selected === 1 ? '2px solid #F35BF2' : '1px solid #cccc'} ` }}>
+                                <div className="flex flex-wrap md:flex-nowrap gap-10 w-full mt-4">
+                                    <div onClick={() => { setSelected(1) }} className={`md:flex-1 px-3 py-2 rounded-2xl cursor-pointer h-[150px] ${selected === 1 && 'bg-[linear-gradient(0deg,#4C4430_0%,#4B3B48_0%,#4C4430_100%)]'}`} style={{ border: `${selected === 1 ? '2px solid #F35BF2' : '1px solid #cccc'} ` }}>
                                         <h1 className="text-white font-sans font-bold mt-4">ERC 721</h1>
                                         <p className="text-gray-400 mt-4 pr-4">Deploy a contract for creating unique ERC-721 non-fungible tokens</p>
                                     </div>
-                                    <div onClick={() => { setSelected(2) }} className={`flex-1 px-3 py-2 rounded-2xl cursor-pointer h-[150px] ${selected === 2 && 'bg-[linear-gradient(0deg,#4C4430_0%,#4B3B48_0%,#4C4430_100%)]'}`} style={{ border: `${selected === 2 ? '2px solid #F35BF2' : '1px solid #cccc'} ` }}>
+                                    <div onClick={() => { setSelected(2) }} className={`md:flex-1 px-3 py-2 rounded-2xl cursor-pointer h-[150px] ${selected === 2 && 'bg-[linear-gradient(0deg,#4C4430_0%,#4B3B48_0%,#4C4430_100%)]'}`} style={{ border: `${selected === 2 ? '2px solid #F35BF2' : '1px solid #cccc'} ` }}>
                                         <h1 className="text-white font-sans font-bold mt-4">ERC 1155</h1>
                                         <p className="text-gray-400 mt-4 pr-4">Deploy a contract for creating flexible ERC-1155 semi-fungible tokens</p>
                                     </div>

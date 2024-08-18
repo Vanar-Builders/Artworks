@@ -14,7 +14,7 @@ import { useDispatch } from 'react-redux';
 export default function NamePopUpDialog({ open, setOpen }) {
     const [name, setName] = React.useState('');
     const address = useSelector(state => state.auth.address);
-    const RegistryAddress = "0xb3d3F57272F3bF36d12f632220b5fc37C526805F";
+    const RegistryAddress = import.meta.env.VITE_APP_REGISTRY_CONTRACT_ADDRESS;
     const [web3js, setWeb3] = React.useState(null);
     const dispatch = useDispatch();
 
