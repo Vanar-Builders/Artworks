@@ -25,7 +25,7 @@ contract NftMarketplace is Ownable, ERC721Holder, ERC1155Holder {
     }
 
     mapping(address => mapping(string => Collection)) public collections;
-    mapping(address => mapping(uint256 => Listing)) public listings;
+    mapping(address => mapping(address => mapping(uint256 => Listing))) public listings;
 
     event CollectionCreated(address indexed creator, address nftContract, string name);
     event NFTMinted(address indexed nftContract, uint256 tokenId, address indexed to, uint256 amount);
@@ -37,7 +37,7 @@ contract NftMarketplace is Ownable, ERC721Holder, ERC1155Holder {
     );
     event NFTListingCancelled(address indexed seller, address indexed nftContract, uint256 indexed tokenId);
 
-    constructor(address _registry) Ownable(msg.sender) {
+    constructor(address _registry) {
         registry = ArtworksRegistry(_registry);
     }
 
@@ -49,20 +49,18 @@ contract NftMarketplace is Ownable, ERC721Holder, ERC1155Holder {
         bool isERC721
     ) external {
         require(bytes(collections[msg.sender][collectionName].name).length == 0, "Collection exists");
-        string memory name = registry.getArtist(msg.sender);
-        require(bytes(name).length > 0, "Not registered artist");
+        string memory artistName = registry.getArtist(msg.sender);
+        require(bytes(artistName).length > 0, "Not registered artist");
 
         if (isERC721) {
             ArtworkERC721NFT nft = new ArtworkERC721NFT(nftTitle, symbol, msg.sender);
             collections[msg.sender][collectionName] = Collection(address(nft), collectionName);
-            registry.createCollection(collectionName);
-            emit CollectionCreated(msg.sender, address(nft), collectionName);
         } else {
             ArtworkERC1155NFT nft = new ArtworkERC1155NFT(uri, msg.sender);
             collections[msg.sender][collectionName] = Collection(address(nft), collectionName);
-            registry.createCollection(collectionName);
-            emit CollectionCreated(msg.sender, address(nft), collectionName);
         }     
+        registry.createCollection(collectionName);
+        emit CollectionCreated(msg.sender, collections[msg.sender][collectionName].nftContract, collectionName);
     }
 
     function mintNFT(
@@ -79,12 +77,12 @@ contract NftMarketplace is Ownable, ERC721Holder, ERC1155Holder {
             ArtworkERC721NFT nft = ArtworkERC721NFT(collection.nftContract);
             require(msg.sender == nft.owner(), "Only collection owner can mint");
             uint256 tokenId = nft.mintNFT(tokenURI);
-            emit NFTMinted(address(nft), tokenId, msg.sender, 1);
+            emit NFTMinted(collection.nftContract, tokenId, msg.sender, 1);
         } else {
             ArtworkERC1155NFT nft = ArtworkERC1155NFT(collection.nftContract);
             require(msg.sender == nft.owner(), "Only collection owner can mint");
             uint256 tokenId = nft.mintNFT(msg.sender, amount, data);
-            emit NFTMinted(address(nft), tokenId, msg.sender, amount);
+            emit NFTMinted(collection.nftContract, tokenId, msg.sender, amount);
         }
     }
 

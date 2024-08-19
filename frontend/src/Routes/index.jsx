@@ -11,6 +11,7 @@ export const ReactRoutes = () => {
     const name = useSelector(state=>state.auth.name)
     const address = useSelector(state=>state.auth.address)
     const [open, setOpen] = useState(address ? name ? false : true : false)
+    const [collectionName, setCollectionName] = useState([]);
 
     useEffect(() => {
         setOpen(address ? name ? false : true : false)
@@ -20,8 +21,8 @@ export const ReactRoutes = () => {
             <Routes>
                 <Route path="/" element={<HeroSection />} />
                 <Route path="/create" element={name && address ? <CreateNFTS /> : <Navigate to="/"/>} />
-                <Route path="/create/single" element={<CreateSingleNFT />} />
-                <Route path="/create/collection" element={<CreateCollection />} />
+                <Route path="/create/single" element={<CreateSingleNFT collectionName={collectionName} />} />
+                <Route path="/create/collection" element={<CreateCollection collectionName={collectionName} setCollectionName={setCollectionName} />} />
             </Routes>
             {open && <NamePopUpDialog open={open} setOpen={setOpen}/>}
         </>

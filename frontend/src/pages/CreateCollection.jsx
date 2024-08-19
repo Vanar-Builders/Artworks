@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import Web3 from 'web3';
 import NFTMarketplaceABI from '../contracts/NftMarketplace.json';
 
-export const CreateCollection = () => {
+export const CreateCollection = ({ collectionName, setCollectionName }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedFile1, setSelectedFile1] = useState(null);
     const [selectedFile2, setSelectedFile2] = useState(null);
@@ -92,6 +92,14 @@ export const CreateCollection = () => {
                 from: address,
                 gas: gasEstimate,
                 gasPrice: gasPrice
+            });
+
+            // Update collectionName array
+            setCollectionName(collectionName => {
+                const updatedCollectionName = [...collectionName, title];
+                console.log("set collection name");
+                console.log(updatedCollectionName);
+                return updatedCollectionName;
             });
 
             console.log("Collection created, transaction hash:", result.transactionHash);

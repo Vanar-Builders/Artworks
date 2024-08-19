@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useIPFS } from '../components/UploadIPFS';
 import { useWeb3 } from '../components/ConnectWallet';
+import { useSelector } from "react-redux";
 import NFTMarketplaceABI from '../contracts/NftMarketplace.json';
+import { CreateCollection } from "./CreateCollection";
 import Web3 from "web3";
 
-export const CreateSingleNFT = () => {
+export const CreateSingleNFT = ({ collectionName = [] }) => {
     const [selectedFile, setSelectedFile] = useState(null);
-    const [title, setTitle] = useState('');
+    const [selectedCollection, setSelectedCollection] = useState("Select Collection");
+    const [nftTitle, setnftTitle] = useState('');
     const [description, setDescription] = useState('');
     const [supply, setSupply] = useState('');
     const { uploadImageAndMetadata, isUploading, error } = useIPFS();
@@ -15,7 +18,9 @@ export const CreateSingleNFT = () => {
     const [collections, setCollections] = useState('');
     const [web3js, setWeb3] = useState(null);
 
-    const marketplaceAddress = import.meta.env.VITE_APP_MARKETPLACE_CONTRACT_ADDRESS;
+    const address = useSelector(state => state.auth.address);
+
+    const marketplaceAddress = import.meta.env.VITE_APP_MARKETPLACE_CONTRACT_ADDRESS
     // const marketplaceContract = new web3js.eth.Contract(NFTMarketplaceABI.abi, marketplaceAddress);
 
     const handleDivClick = () => {
@@ -32,37 +37,69 @@ export const CreateSingleNFT = () => {
             const web3Instance = new Web3(window.ethereum);
             setWeb3(web3Instance);
         }
-    }, []);  
+    }, []); 
+    
+    const handleSelectChange = (e) => {
+        console.log("Selected value:", e.target.value);
+        setSelectedCollection(e.target.value);
+    };
 
     const handleMint = async () => {
-        if (!selectedFile || !title || !description || !supply) {
-            alert("Please fill in all fields and upload an image.");
+        if (!web3js) {
+            alert("Web3 is not initialized. Please try again.");
             return;
         }
-
-        if (!connected) {
+    
+        const marketplaceContract = new web3js.eth.Contract(NFTMarketplaceABI.abi, marketplaceAddress);
+        if (!address || !marketplaceContract) {
             alert("Please connect your wallet first.");
             return;
         }
-        setMessage('');  
-
+    
+        if (!selectedFile || !nftTitle || !description || !supply || selectedCollection === "") {
+            alert("Please fill in all fields and upload an image.");
+            return;
+        }
+    
+        setMessage('');
+    
         try {
-            const metadataURI = await uploadImageAndMetadata(selectedFile, title, description);
-            console.log("Metadata URI:", metadataURI);
-            
-            // Assume ERC721 (single NFT) minting
-            const isERC721 = supply === '1';
-            const data = "0x"; // Placeholder for additional data if needed
+            const metadataURI = await uploadImageAndMetadata(selectedFile, nftTitle, description);
+            console.log("Metadata URI:", metadataURI.metadataIpfsHash);
+            console.log("collection name", selectedCollection);
+    
+            const supplyNumber = parseInt(supply);
+            const isERC721 = supplyNumber === 1;
+            const data = "0x"; 
+            const gasPrice = await web3js.eth.getGasPrice();
 
-            // Call the mintNFT function from the marketplace contract
-            await marketplaceContract.methods.mintNFT(
-                title,        // collectionName
-                metadataURI,  // tokenURI
-                supply,       // amount
+            console.log("supply", supplyNumber);
+            console.log("data", data);
+            console.log("isERC721", isERC721);
+    
+            console.log("Attempting to estimate gas...");
+            const gasEstimate = await marketplaceContract.methods.mintNFT(
+                selectedCollection, 
+                metadataURI.metadataIpfsHash,        
+                supplyNumber,        
                 data,
                 isERC721
-            ).send({ from: account });
-
+            ).estimateGas({ from: address });
+    
+            console.log("Gas Estimate:", gasEstimate);
+    
+            const result = await marketplaceContract.methods.mintNFT(
+                selectedCollection, 
+                metadataURI.metadataIpfsHash,        
+                supplyNumber,        
+                data,
+                isERC721
+            ).send({
+                from: address,
+                gas: gasEstimate,
+                gasPrice: gasPrice
+            });
+    
             setMessage('NFT minted successfully!');
         } catch (err) {
             console.error("Error minting NFT:", err);
@@ -99,19 +136,32 @@ export const CreateSingleNFT = () => {
                     <div className="max-w-[600px] w-full">
                         <h1 className="text-white font-bold text-lg font-sans mb-2">Choose Collection</h1>
                         <label className="text-sm text-gray-400 font-sans" htmlFor="">This is the collection where your item will appear.</label>
-                        <select className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] mt-3 px-2 text-[14px] rounded-lg text-white" name="" id="">
-                            <option className="h-[40px] text-black" selected disabled value="">Select Collection</option>
+                        <select
+                            value={selectedCollection}
+                            onChange={handleSelectChange}
+                            className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] mt-3 px-2 text-[14px] rounded-lg text-white"
+                            name=""
+                            id=""
+                        >
+                            <option className="h-[40px] text-black" selected value="">
+                                Select Collection
+                            </option>
+                            {collectionName && collectionName.map((el, index) => (
+                                <option key={index} className="h-[40px] text-black" value={el}>
+                                    {el}
+                                </option>
+                            ))}
                         </select>
                         {
-                            !collections.length && <p className="text-red-400 mt-2">You first need a collection. <span style={{ textDecoration: "underline", cursor: "pointer" }}>Click here</span>  to create one</p>
+                            collectionName && !collectionName.length && <p className="text-red-400 mt-2">You first need a collection. <span style={{ textDecoration: "underline", cursor: "pointer" }}>Click here</span>  to create one</p>
                         }
                                                 <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Title</h1>
                         <input 
                             type="text" 
                             className="w-full bg-[linear-gradient(0deg,#1E1E1E_0%,#282637_0%,#282637_100%)] h-[50px] px-2 text-[14px] rounded-lg text-white" 
                             placeholder="Title" 
-                            value={title} 
-                            onChange={(e) => setTitle(e.target.value)}
+                            value={nftTitle} 
+                            onChange={(e) => setnftTitle(e.target.value)}
                         />
 
                         <h1 className="text-white font-bold text-lg font-sans mt-3 mb-2">Description</h1>
