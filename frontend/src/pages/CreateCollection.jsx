@@ -23,12 +23,6 @@ export const CreateCollection = () => {
 
     const { uploadToIPFS, createFolder } = useIPFS();
 
-    useEffect(() => {
-        if (!address) {
-            navigate('/'); // Redirect to connection page if not connected
-        }
-    }, [address]);
-
     const handleDivClick = () => {
         document.getElementById('fileInput').click();
     };

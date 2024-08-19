@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useIPFS } from '../components/UploadIPFS';
 import { useWeb3 } from '../components/ConnectWallet';
+import NFTMarketplaceABI from '../contracts/NftMarketplace.json';
+import Web3 from "web3";
 
 export const CreateSingleNFT = () => {
     const [selectedFile, setSelectedFile] = useState(null);
@@ -11,9 +13,10 @@ export const CreateSingleNFT = () => {
     const { account, connected } = useWeb3(); // Access Web3 context
     const [message, setMessage] = useState('');
     const [collections, setCollections] = useState('');
+    const [web3js, setWeb3] = useState(null);
 
-    const marketplaceAddress = "0x675651F49D85d78cC45e2915bf7061C6f908Ef71";
-    const marketplaceContract = new web3js.eth.Contract(NFTMarketplaceABI.abi, marketplaceAddress);
+    const marketplaceAddress = import.meta.env.VITE_APP_MARKETPLACE_CONTRACT_ADDRESS;
+    // const marketplaceContract = new web3js.eth.Contract(NFTMarketplaceABI.abi, marketplaceAddress);
 
     const handleDivClick = () => {
         document.getElementById('fileInput').click();
@@ -23,6 +26,13 @@ export const CreateSingleNFT = () => {
         setSelectedFile(event.target.files[0]);
         console.log(event.target.files[0]);
     };
+    
+    useEffect(() => {
+        if (window.ethereum) {
+            const web3Instance = new Web3(window.ethereum);
+            setWeb3(web3Instance);
+        }
+    }, []);  
 
     const handleMint = async () => {
         if (!selectedFile || !title || !description || !supply) {
@@ -34,8 +44,8 @@ export const CreateSingleNFT = () => {
             alert("Please connect your wallet first.");
             return;
         }
+        setMessage('');  
 
-        setMessage('');
         try {
             const metadataURI = await uploadImageAndMetadata(selectedFile, title, description);
             console.log("Metadata URI:", metadataURI);
